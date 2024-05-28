@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>My Web Page</title>
+    <link href="style.css" rel="stylesheet" />
+    <script src="https://unpkg.com/vue@3"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div v-show="busy" class="overlay">
+            <div class="loader">
+            </div>
+        </div>
+        <h1>{{ message }}</h1>
+        <input v-model.lazy="keywd" placeholder="keyword">
+        <button @click="search">Search</button>
+        <input type="date" v-model="st" format="yyyy-MM-dd">
+        <input type="date" v-model="ed" format="yyyy-MM-dd">
+        <span class="count">{{ list.length }} items</span>
+        <ul>
+            <li v-for="item in list">
+                <div calss="title">
+                    <span class="toggle-icon" @click="item.expanded = !item.expanded">
+                        <span v-if="!item.expanded">⊞</span>
+                        <span v-if="item.expanded">⊟</span>
+                    </span>
+                    <a :href="'https://arxiv.org/abs/' + item.Id" target="_blank"
+                        v-html="hiliteKeywd(item.Title)">
+                    </a>
+                    <span class="date">{{ item.update_date }}</span>
+                </div>
+                <div class="abstract" v-show="item.expanded">
+                    <span v-html="hiliteKeywd(item.Abstract)"></span>
+                    <a v-show="!item.AbstractCht" @click="translate(item)" href="javascript:void(0);">翻譯</a>
+                    <br />
+                    <span v-html="hiliteKeywd(item.AbstractCht)"></span>
+                </div>
+            </li>
+        </ul>
+    </div>
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    keywd: 'ChatGPT',
+                    st: '',
+                    ed: '',
+                    list: [],
+                    message: '',
+                    busy: false
+                }
+            },
+            methods: {
+                hiliteKeywd(text) {
+                    return text && text.replace(new RegExp(this.keywd, 'gi'), '<span class="keywd">$&</span>');
+                },
+                async search() {
+                    this.busy = true;
+                    const list = await fetch(
+                        `/search?keywd=${encodeURIComponent(this.keywd)}&st=${this.st}&ed=${this.ed}`)
+                        .then(response => response.json());
+                    this.list = list;
+                    this.busy = false;
+                },
+                async translate(item) {
+                    this.busy = true;
+                    const traslated = await fetch(`/translate?id=${item.Id}`)
+                        .then(response => response.text());
+                    item.AbstractCht = traslated;
+                    this.busy = false;
+                }
+            }
+        });
+        var vm = app.mount('#app');
+    </script>
+</body>
+
+</html>
