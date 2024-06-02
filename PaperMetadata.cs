@@ -38,9 +38,13 @@ public class MyDbContext : DbContext
     {
         var papers = this.PaperMetadata
             .Where(p => string.IsNullOrEmpty(st) || p.UpdateDate.CompareTo(st) >= 0)
-            .Where(p => string.IsNullOrEmpty(ed) || p.UpdateDate.CompareTo(ed) <= 0)
-            .Where(p => p.Title.Contains(keywd) || p.Abstract.Contains(keywd))
-            .OrderByDescending(p => p.UpdateDate);
+            .Where(p => string.IsNullOrEmpty(ed) || p.UpdateDate.CompareTo(ed) <= 0);
+        var whereKeywd = keywd.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var k in whereKeywd) {            
+            var trimed = k.Trim();
+            papers = papers.Where(p => p.Title.Contains(trimed) || p.Abstract.Contains(trimed));
+        }
+        papers = papers.OrderByDescending(p => p.UpdateDate);
         return papers;
     }
 }
